@@ -29,7 +29,6 @@ const ChatBox = () => {
   const [stompClient, setStompClient] = useState(null);
   const imageRef = useRef(null);
   const [imgUrl, setImgUrl] = useState(null);
-  let size = imgUrl ? 70:80
 
   useEffect(() => {
     const sock = new SockJS(`${API_BASE_URL}/ws`);
@@ -101,36 +100,10 @@ const ChatBox = () => {
     );
   };
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage =async (e) => {
     e.preventDefault();
-    if ((imgUrl != null && imgUrl != "")&&message) {
-        dispatch(
-          sendMessage({
-            message: {
-              senderId: auth.user?.id,
-              projectId: id,
-              content: "",
-              img: imgUrl,
-            },
-            sendMessageToServer,
-          })
-        );
-        setImgUrl("");
-
-        dispatch(
-          sendMessage({
-            message: {
-              senderId: auth.user?.id,
-              projectId: id,
-              content: message,
-              img: "",
-            },
-            sendMessageToServer,
-          })
-        );
-        setMessage("");
-    }else if((imgUrl != null && imgUrl != "") && !message){
-      dispatch(
+    if (imgUrl != null && imgUrl != "" && message) {
+      await dispatch(
         sendMessage({
           message: {
             senderId: auth.user?.id,
@@ -142,8 +115,34 @@ const ChatBox = () => {
         })
       );
       setImgUrl("");
-    }else if(message){
-      dispatch(
+
+      await dispatch(
+        sendMessage({
+          message: {
+            senderId: auth.user?.id,
+            projectId: id,
+            content: message,
+            img: "",
+          },
+          sendMessageToServer,
+        })
+      );
+      setMessage("");
+    } else if (imgUrl != null && imgUrl != "" && !message) {
+      await dispatch(
+        sendMessage({
+          message: {
+            senderId: auth.user?.id,
+            projectId: id,
+            content: "",
+            img: imgUrl,
+          },
+          sendMessageToServer,
+        })
+      );
+      setImgUrl("");
+    } else if (message) {
+      await dispatch(
         sendMessage({
           message: {
             senderId: auth.user?.id,
@@ -156,56 +155,65 @@ const ChatBox = () => {
       );
       setMessage("");
     }
-    
   };
 
-  const handleMessageChange = (e) => {
-    setMessage(e.target.value);
-  };
   return (
     <form onSubmit={handleSendMessage}>
       <div className="sticky">
         <div className="border rounded-lg">
           <h1 className="border-b p-5">Chat Box</h1>
-          <ScrollArea className={`h-[${size}vh] w-full p-5 flex gap-3 flex-col`}>
-            {chat.loading && <Progress value={33} />}
-            {!chat.loading && chat.messages?.map((item) =>
-              item?.sender?.id == auth?.user.id ? (
-                <div
-                  ref={lastMessage}
-                  key={item.id}
-                  className="flex gap-2 mb-3 justify-start"
-                >
-                  <Avatar>
-                    <AvatarFallback>{item.sender?.fullName[0]}</AvatarFallback>
-                  </Avatar>
-                  {item.content&&
-                  <div className="space-y-1 py-1 px-4 border rounded-ss-2xl rounded-e-xl">
-                    <p>{item.sender?.fullName}</p>
-                    <p className="text-gray-300">{item.content}</p>
-                  </div>}
-                  {item.img&&
-                  
-                    <img src={item.img}  alt="Message Image" className="rounded-sm w-[53%] h-[53%]"/>
-                  }
-                </div>
-              ) : (
-                <div key={item} className="flex gap-2 mb-3 justify-end">
-                  {item.content&&
-                  <div className="space-y-2 py-2 px-5 border rounded-se-2xl rounded-s-xl ">
-                    <p>{item.sender?.fullName}</p>
-                    <p className="text-gray-300">{item.content}</p>
-                  </div>}
-                  {item.img&&
-                  
-                  <img src={item.img}  alt="Message Image" className="rounded-sm w-[53%] h-[53%]"/>
-                }
-                  <Avatar>
-                    <AvatarFallback>{item.sender?.fullName[0]}</AvatarFallback>
-                  </Avatar>
-                </div>
-              )
-            )}
+          <ScrollArea className={`h-[65vh] w-full p-5 flex gap-3 flex-col`}>
+            {
+              chat.messages?.map((item) =>
+                item?.sender?.id != auth?.user.id ? (
+                  <div
+                    
+                    key={item.id}
+                    className="flex gap-2 mb-3 justify-start"
+                  >
+                    <Avatar>
+                      <AvatarFallback>
+                        {item.sender?.fullName[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    {item.content && (
+                      <div className="space-y-1 py-1 px-4 border rounded-ss-2xl rounded-e-xl">
+                        <p>{item.sender?.fullName}</p>
+                        <p className="text-gray-300">{item.content}</p>
+                      </div>
+                    )}
+                    {item.img && (
+                      <img
+                        src={item.img}
+                        alt="Message Image"
+                        className="rounded-sm w-[53%] h-[53%]"
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <div key={item} className="flex gap-2 mb-3 justify-end">
+                    {item.content && (
+                      <div className="space-y-2 py-2 px-5 border rounded-se-2xl rounded-s-xl ">
+                        <p>{item.sender?.fullName}</p>
+                        <p className="text-gray-300">{item.content}</p>
+                      </div>
+                    )}
+                    {item.img && (
+                      <img
+                        src={item.img}
+                        alt="Message Image"
+                        className="rounded-sm w-[53%] h-[53%]"
+                      />
+                    )}
+                    <Avatar>
+                      <AvatarFallback>
+                        {item.sender?.fullName[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                )
+              )}
+              <div ref={lastMessage}></div>
           </ScrollArea>
 
           <div className={`relative p-0`}>
@@ -233,7 +241,7 @@ const ChatBox = () => {
               <Input
                 className="border-gray-700"
                 value={message}
-                onChange={handleMessageChange}
+                onChange={(e) => setMessage(e.target.value)}
               />
               <Button
                 type="button"
@@ -244,7 +252,8 @@ const ChatBox = () => {
                 <BsFillImageFill
                   size={20}
                   onClick={() => {
-                    imageRef.current.click()}}
+                    imageRef.current.click();
+                  }}
                 />
                 <input
                   type={"file"}

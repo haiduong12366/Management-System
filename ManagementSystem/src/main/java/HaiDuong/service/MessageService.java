@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface MessageService {
     Message sendMessage(MessageRequest req) throws Exception;
-    List<Message> getMessagesByProjectId(Long projectId) throws Exception;
+    List<Message> getMessagesByProjectId(Long projectId, Long UserId) throws Exception;
 }

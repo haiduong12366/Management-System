@@ -50,8 +50,10 @@ public class MessageController {
 
     @GetMapping("/chat/{projectId}")
     public ResponseEntity<List<Message>> getMessagesByChatId(@PathVariable Long projectId
-    ) throws Exception {
-       List<Message> messages = messageService.getMessagesByProjectId(projectId);
+    ,@RequestHeader("Authorization") String jwt) throws Exception {
+        User user = userService.findUserProfileByJwt(jwt);
+
+        List<Message> messages = messageService.getMessagesByProjectId(projectId,user.getId());
         return new ResponseEntity<>(messages, HttpStatus.OK);
     }
 }
